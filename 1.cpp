@@ -12,7 +12,7 @@ private:
     string owner;           // владелец (строка)
     string registrationDate; // дата постановки на учет (в формате гггг.мм.дд)
     int estimatedValue;      // ориентировочная стоимость (целое)
-
+    string color; //цвет
 public:
     // Конструктор
     RealEstate(const string& ownerName, const string& date, int value) 
