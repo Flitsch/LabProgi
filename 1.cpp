@@ -10,7 +10,7 @@ private:
     string owner;
     string date;
     int price;
-    
+    string color; 
 public:
     Property(string o, string d, int p) : owner(o), date(d), price(p) {}
     
@@ -18,7 +18,6 @@ public:
     string getDate() const { return date; }
     int getPrice() const { return price; }
 };
-
 class PropertyManager {
 private:
     vector<Property> properties;
@@ -29,6 +28,11 @@ public:
         properties.push_back(Property("Петров Петр", "2023.02.20", 7800000));
         properties.push_back(Property("Сидорова Анна", "2023.03.10", 3200000));
     }
+
+    const vector<Property>& getProperties() const {
+        return properties;
+    }
+
     
     void addProperty(const string& owner, const string& date, int price) {
         properties.push_back(Property(owner, date, price));
@@ -87,6 +91,7 @@ int main() {
     cout << "  list - показать все" << endl;
     cout << "  total - общая стоимость" << endl;
     cout << "  exit - выход" << endl;
+    cout << "  total5 - цена > 5000 " << endl;
     cout << "=============================" << endl;
     
     manager.showAll();
@@ -125,7 +130,63 @@ int main() {
                 cout << "Ошибка: имя должно быть в кавычках" << endl;
                 cin.ignore(10000, '\n');
             }
-        } else {
+        } 
+	        if (command == "total5") {
+    cout << "Команды:" << endl;
+    cout << "  add \"Имя Фамилия\" ГГГГ.ММ.ДД Цена - добавить объект" << endl;
+    cout << "  list - показать все" << endl;
+    cout << "  total - общая стоимость" << endl;
+    cout << "  exit - выход" << endl;
+    cout << "  total5 - цена > 5000 " << endl;
+    cout << "=============================" << endl;
+
+    manager.showAll();
+
+    while (true) {
+        cout << "\n> ";
+        cin >> command;
+
+        if (command == "exit") {
+            cout << "Программа завершена" << endl;
+            break;
+        }
+
+        if (command == "list") {
+            manager.showAll();
+            continue;
+        }
+
+        if (command == "total") {
+            cout << "Общая стоимость: " << manager.getTotalValue() << " руб." << endl;
+            continue;
+        }
+
+        if (command == "add") {
+            cin >> ws;
+
+            // Проверяем, что первым символом идет кавычка
+            if (cin.peek() == '"') {
+                cin.ignore(); // пропускаем открывающую кавычку
+                getline(cin, owner, '"'); // читаем до закрывающей кавычки
+                cin >> date >> price;
+
+                manager.addProperty(owner, date, price);
+                manager.showAll();
+            } else {
+                cout << "Ошибка: имя должно быть в кавычках" << endl;
+                cin.ignore(10000, '\n');
+            }
+        }
+                if (command == "total5") {
+                cout << f(manager.getProperties()) << endl;
+        }
+
+        else {
+            cout << "Неизвестная команда" << endl;
+            cin.ignore(10000, '\n');
+        }
+    }
+	else {
             cout << "Неизвестная команда" << endl;
             cin.ignore(10000, '\n');
         }

@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Pre-commit hook для запуска тестов перед коммитом
+# Если тесты проваливаются, коммит отменяется
+
+echo "=========================================="
+echo "Запуск pre-commit hook..."
+echo "=========================================="
+
+# Переменные
+PROJECT_DIR="C:/Users/kirie/OneDrive/Desktop/ПРОГА ТУТ/RealEstateApp"
+BUILD_DIR="$PROJECT_DIR/build/Desktop_Qt_6_11_0_MinGW_64_bit-test2"
+TEST_EXE="$BUILD_DIR/debug/RealEstateApp_tests.exe"
+
+# Проверяем, существует ли тестовый исполняемый файл
+if [ ! -f "$TEST_EXE" ]; then
+    echo "Ошибка: Тестовый исполняемый файл не найден!"
+    echo "Сначала соберите тесты:"
+    echo "  cd $PROJECT_DIR"
+    echo "  qmake CONFIG+=test RealEstateApp.pro"
+    echo "  make"
+    exit 1
+fi
+
+# Запускаем тесты
+echo "Запуск тестов..."
+echo "=========================================="
+
+# Запускаем тесты и сохраняем вывод
+TEST_OUTPUT=$("$TEST_EXE" 2>&1)
+TEST_RESULT=$?
+
+echo "$TEST_OUTPUT"
+echo "=========================================="
+
+# Проверяем результат тестов
+if [ $TEST_RESULT -ne 0 ]; then
+    echo ""
+    echo "❌ ТЕСТЫ НЕ ПРОЙДЕНЫ! КОММИТ ОТМЕНЕН."
+    echo ""
+    echo "Исправьте ошибки и попробуйте снова."
+    exit 1
+else
+    echo ""
+    echo "✅ ВСЕ ТЕСТЫ ПРОЙДЕНЫ! КОММИТ РАЗРЕШЕН."
+    echo ""
+    exit 0
+fi
