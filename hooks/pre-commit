@@ -1,48 +1,130 @@
 #!/bin/bash
 
-# Pre-commit hook для запуска тестов перед коммитом
-# Если тесты проваливаются, коммит отменяется
+# ============================================
+# PRE-COMMIT HOOK для RealEstateApp
+# Запускает тесты перед коммитом
+# ============================================
 
-echo "=========================================="
-echo "Запуск pre-commit hook..."
-echo "=========================================="
+echo ""
+echo "═══════════════════════════════════════════════════════════"
+echo "     PRE-COMMIT HOOK: Запуск модульных тестов"
+echo "═══════════════════════════════════════════════════════════"
+echo ""
 
-# Переменные
+# Цвета для вывода
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Пути к проекту
 PROJECT_DIR="C:/Users/kirie/OneDrive/Desktop/ПРОГА ТУТ/RealEstateApp"
-BUILD_DIR="$PROJECT_DIR/build/Desktop_Qt_6_11_0_MinGW_64_bit-test2"
-TEST_EXE="$BUILD_DIR/debug/RealEstateApp_tests.exe"
+TEST_BUILD_DIR="$PROJECT_DIR/build/test"
+TEST_EXE="$TEST_BUILD_DIR/debug/RealEstateApp_tests.exe"
 
-# Проверяем, существует ли тестовый исполняемый файл
-if [ ! -f "$TEST_EXE" ]; then
-    echo "Ошибка: Тестовый исполняемый файл не найден!"
-    echo "Сначала соберите тесты:"
-    echo "  cd $PROJECT_DIR"
-    echo "  qmake CONFIG+=test RealEstateApp.pro"
-    echo "  make"
-    exit 1
-fi
+# Функции
+print_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
 
-# Запускаем тесты
-echo "Запуск тестов..."
-echo "=========================================="
+print_success() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
 
-# Запускаем тесты и сохраняем вывод
-TEST_OUTPUT=$("$TEST_EXE" 2>&1)
-TEST_RESULT=$?
+print_info() {
+    echo -e "${YELLOW}📦 $1${NC}"
+}
 
-echo "$TEST_OUTPUT"
-echo "=========================================="
+# Проверка, есть ли изменения в коде (не только в тестах)
+check_code_changes() {
+    # Проверяем, есть ли изменения в исходных файлах
+    if git diff --cached --name-only | grep -E "\.(cpp|h|hpp)$" > /dev/null; then
+        return 0  # Есть изменения в коде
+    else
+        return 1  # Нет изменений в коде
+    fi
+}
 
-# Проверяем результат тестов
-if [ $TEST_RESULT -ne 0 ]; then
+# Запуск тестов
+run_tests() {
+    print_info "Сборка и запуск тестов..."
+    echo "───────────────────────────────────────────────────────────────"
+    
+    # Создаем папку для сборки тестов
+    mkdir -p "$TEST_BUILD_DIR"
+    cd "$PROJECT_DIR" || exit 1
+    
+    # Сборка тестов
+    print_info "Конфигурация тестовой сборки..."
+    cd "$TEST_BUILD_DIR" || exit 1
+    qmake "$PROJECT_DIR/RealEstateApp.pro" CONFIG+=test CONFIG+=debug
+    
+    if [ $? -ne 0 ]; then
+        print_error "Ошибка при запуске qmake"
+        return 1
+    fi
+    
+    print_info "Компиляция тестов..."
+    mingw32-make -j4
+    
+    if [ $? -ne 0 ]; then
+        print_error "Ошибка при компиляции тестов"
+        return 1
+    fi
+    
+    # Запуск тестов
     echo ""
-    echo "❌ ТЕСТЫ НЕ ПРОЙДЕНЫ! КОММИТ ОТМЕНЕН."
-    echo ""
-    echo "Исправьте ошибки и попробуйте снова."
-    exit 1
-else
-    echo ""
-    echo "✅ ВСЕ ТЕСТЫ ПРОЙДЕНЫ! КОММИТ РАЗРЕШЕН."
-    echo ""
-    exit 0
-fi
+    print_info "Запуск тестов..."
+    echo "───────────────────────────────────────────────────────────────"
+    
+    if [ -f "$TEST_EXE" ]; then
+        "$TEST_EXE"
+        TEST_RESULT=$?
+    else
+        print_error "Тестовый исполняемый файл не найден: $TEST_EXE"
+        return 1
+    fi
+    
+    return $TEST_RESULT
+}
+
+# Основная логика
+main() {
+    # Проверяем, есть ли изменения в коде
+    if ! check_code_changes; then
+        print_info "Нет изменений в исходном коде, пропускаем тесты"
+        echo ""
+        print_success "Коммит разрешен (тесты не требуются)"
+        exit 0
+    fi
+    
+    # Запускаем тесты
+    run_tests
+    
+    if [ $? -eq 0 ]; then
+        echo ""
+        echo "───────────────────────────────────────────────────────────────"
+        print_success "ВСЕ ТЕСТЫ ПРОЙДЕНЫ!"
+        echo "───────────────────────────────────────────────────────────────"
+        echo ""
+        print_success "Коммит разрешен"
+        exit 0
+    else
+        echo ""
+        echo "───────────────────────────────────────────────────────────────"
+        print_error "ТЕСТЫ НЕ ПРОЙДЕНЫ!"
+        echo "───────────────────────────────────────────────────────────────"
+        echo ""
+        print_error "КОММИТ ОТМЕНЕН"
+        echo ""
+        echo "Исправьте ошибки в коде и попробуйте снова."
+        echo ""
+        echo "Для принудительного коммита (без тестов) используйте:"
+        echo "  git commit --no-verify -m \"ваше сообщение\""
+        echo ""
+        exit 1
+    fi
+}
+
+# Запуск основной функции
+main
