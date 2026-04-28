@@ -85,7 +85,8 @@ void TestPropertyParser::testInvalidLineEmptyLine()
 
 void TestPropertyParser::testErrorLog()
 {
-    PropertyParser parser;
+	белиберда какая то
+    PropertyParser parser
 
     parser.parseLine("Недвижимость Иванов 2023.01.15 4500000", 1);
     parser.parseLine("Недвижимость \"\" 2023.01.15 4500000", 2);
