@@ -2,61 +2,51 @@
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
-echo "     PRE-COMMIT HOOK: Запуск модульных тестов"
+echo "     PRE-COMMIT HOOK: Запуск файловых тестов"
 echo "═══════════════════════════════════════════════════════════"
 echo ""
 
-# Путь к тестам
-TEST_EXE="lab3/RealEstateApp/build/test/debug/RealEstateApp_tests.exe"
+# Правильный путь к тестам
+TEST_EXE="$HOME/LabProgi/lab4/build/Desktop_Qt_6_11_0_MinGW_64_bit-test2/debug/RealEstateApp_tests.exe"
 
-# Альтернативный путь
+# Проверка существования тестов
 if [ ! -f "$TEST_EXE" ]; then
-    TEST_EXE="lab3/RealEstateApp/build/Desktop_Qt_6_11_0_MinGW_64_bit-test2/debug/RealEstateApp_tests.exe"
-fi
-
-# Проверяем изменения в папке lab3/RealEstateApp
-check_code_changes() {
-    # Проверяем только файлы в папке lab3/RealEstateApp
-    if git diff --cached --name-only | grep "lab3/RealEstateApp" | grep -E "\.(cpp|h|hpp|pro)$" > /dev/null; then
-        return 0  # Есть изменения в коде
-    fi
-    return 1  # Нет изменений
-}
-
-# Если нет изменений в коде - пропускаем
-if ! check_code_changes; then
-    echo "📦 Нет изменений в исходном коде RealEstateApp"
-    echo "✅ Коммит разрешен"
-    exit 0
-fi
-
-echo "📦 Обнаружены изменения в коде RealEstateApp"
-
-# Проверяем существование тестов
-if [ ! -f "$TEST_EXE" ]; then
-    echo "⚠️ Тесты не найдены: $TEST_EXE"
-    echo "✅ Коммит разрешен (тесты не настроены)"
-    exit 0
-fi
-
-# Запускаем тесты
-echo "🧪 Запуск тестов..."
-echo "───────────────────────────────────────────────────────────────"
-"$TEST_EXE"
-TEST_RESULT=$?
-echo "───────────────────────────────────────────────────────────────"
-
-if [ $TEST_RESULT -eq 0 ]; then
-    echo ""
-    echo "✅ Тесты пройдены!"
-    echo "✅ Коммит разрешен"
-    exit 0
-else
-    echo ""
-    echo "❌ Тесты не пройдены!"
-    echo "❌ КОММИТ ОТМЕНЕН"
-    echo ""
-    echo "Для принудительного коммита: git commit --no-verify"
+    echo "❌ Тесты не найдены по пути:"
+    echo "   $TEST_EXE"
     exit 1
 fi
 
+# Проверка изменений в коде
+check_changes() {
+    git diff --cached --name-only | grep -qE "\.(cpp|h|hpp|pro|txt)$"
+    return $?
+}
+
+if check_changes; then
+    echo "📝 Обнаружены изменения в коде"
+    echo "🧪 Запуск файловых тестов..."
+    echo "───────────────────────────────────────────────────────────────"
+    
+    # Запускаем тесты и сохраняем результат
+    "$TEST_EXE" 2>&1 | grep -E "(PASS|FAIL|Totals)"
+    TEST_RESULT=${PIPESTATUS[0]}
+    
+    echo "───────────────────────────────────────────────────────────────"
+    
+    # Проверяем, есть ли FAIL в выводе
+    if "$TEST_EXE" 2>&1 | grep -q "FAIL!"; then
+        echo ""
+        echo "❌ ТЕСТЫ НЕ ПРОЙДЕНЫ!"
+        echo "❌ КОММИТ ОТМЕНЕН"
+        exit 1
+    else
+        echo ""
+        echo "✅ ТЕСТЫ ПРОЙДЕНЫ!"
+        echo "✅ Коммит разрешен"
+        exit 0
+    fi
+else
+    echo "📝 Нет изменений в коде"
+    echo "✅ Коммит разрешен"
+    exit 0
+fi
